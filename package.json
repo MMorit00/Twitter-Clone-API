@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "clear:node": "chmod +x ./scripts/clear-node-ports.sh && ./scripts/clear-node-ports.sh",
+    "clear:mongo": "chmod +x ./scripts/clear-mongo-ports.sh && ./scripts/clear-mongo-ports.sh",
+    "premongo": "npm run clear:mongo",
+    "mongo": "/Users/panlingchuan/mongodb/bin/mongod --dbpath='/Users/panlingchuan/mongodata2' --port 27018",
+    "predev": "npm run clear:node",
+    "dev": "nodemon app.js",
+    "prestart": "npm run clear:node",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
     "lint": "eslint .",
     "test": "jest"
   },
@@ -12,10 +18,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "express": "^4.21.2",
-    "mongoose": "^8.9.5"
+    "mongoose": "^8.9.5",
+    "validator": "^13.12.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "eslint": "^9.19.0",
+    "globals": "^15.14.0",
     "nodemon": "^3.1.9"
   }
 }

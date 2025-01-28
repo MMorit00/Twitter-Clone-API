@@ -8,9 +8,7 @@ const mongoose = require("mongoose");
 // - twitter-api 数据库名称
 mongoose
   .connect("mongodb://127.0.0.1:27017/twitter-api", {
-    // 使用新的URL解析器
     useNewUrlParser: true,
-    // 使用统一的拓扑结构
     useUnifiedTopology: true,
   })
   .then(() => {
