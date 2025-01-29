@@ -1,29 +1,42 @@
-const express = require("express");
-const Tweet = require("../models/Tweet");
-const router = new express.Router();
+const mongoose = require("mongoose");
 
-// 创建新推文
-router.post("/tweets", async (req, res) => {
-  try {
-    const tweet = new Tweet({
-      ...req.body,
-      userId: req.user._id, // 这里假设我们已经有了认证中间件设置 req.user
-    });
-    await tweet.save();
-    res.status(201).send(tweet);
-  } catch (error) {
-    res.status(400).send(error);
+const tweetSchema = new mongoose.Schema(
+  {
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    image: {
+      type: Buffer,
+    },
+  },
+  {
+    timestamps: true, // 添加 createdAt 和 updatedAt 字段
   }
-});
+);
 
-// 获取所有推文
-router.get("/tweets", async (req, res) => {
-  try {
-    const tweets = await Tweet.find().populate("userId", "name username");
-    res.send(tweets);
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
+// 转换JSON时的处理
+tweetSchema.methods.toJSON = function () {
+  const tweet = this;
+  const tweetObject = tweet.toObject();
 
-module.exports = router;
+  // 如果需要处理敏感数据可以在这里处理
+
+  return tweetObject;
+};
+
+const Tweet = mongoose.model("Tweet", tweetSchema);
+
+module.exports = Tweet;
