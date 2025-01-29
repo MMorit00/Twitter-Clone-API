@@ -12,12 +12,11 @@ const upload = multer({
   },
 });
 
-// 添加auth中间件到需要认证的路由
 router.post("/tweets", auth, async (req, res) => {
   try {
     const tweet = new Tweet({
       ...req.body,
-      userId: req.user._id, // 现在可以安全地使用req.user
+      userId: req.user._id,
     });
     await tweet.save();
     res.status(201).send(tweet);
@@ -84,5 +83,86 @@ router.get("/tweets/:id/image", async (req, res) => {
     res.status(404).send({ error: error.message });
   }
 });
+
+// 点赞推文路由
+router.put("/tweets/:id/like", auth, async (req, res) => {
+  try {
+    // 1. 查找推文
+    const tweet = await Tweet.findById(req.params.id);
+
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+
+    // 2. 检查是否已经点赞
+    if (!tweet.likes.includes(req.user._id)) {
+      // 3. 添加点赞
+      await Tweet.updateOne(
+        { _id: req.params.id },
+        {
+          $push: { likes: req.user._id },
+        }
+      );
+      res.status(200).send({ message: "Tweet has been liked" });
+    } else {
+      // 4. 已点赞则返回错误
+      res.status(403).send({ error: "You have already liked this tweet" });
+    }
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// ... existing code ...
+
+// 取消点赞推文路由
+router.put("/tweets/:id/unlike", auth, async (req, res) => {
+  try {
+    // 1. 查找推文
+    const tweet = await Tweet.findById(req.params.id);
+
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+
+    // 2. 检查是否已经点赞
+    if (tweet.likes.includes(req.user._id)) {
+      // 3. 移除点赞
+      await Tweet.updateOne(
+        { _id: req.params.id },
+        {
+          $pull: { likes: req.user._id },
+        }
+      );
+      res.status(200).send({ message: "Tweet has been unliked" });
+    } else {
+      // 4. 未点赞则返回错误
+      res.status(403).send({ error: "You have already unliked this tweet" });
+    }
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+// 获取特定用户的推文
+router.get("/tweets/user/:id", async (req, res) => {
+  try {
+    const tweets = await Tweet.find({
+      userId: req.params.id,
+    })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    if (!tweets || tweets.length === 0) {
+      return res.status(404).send([]);
+    }
+
+    res.send(tweets);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 
 module.exports = router;

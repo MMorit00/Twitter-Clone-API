@@ -27,15 +27,21 @@ const tweetSchema = new mongoose.Schema(
   }
 );
 
-// 转换JSON时的处理
+
+// 修改toJSON方法来处理图片属性
 tweetSchema.methods.toJSON = function () {
   const tweet = this;
   const tweetObject = tweet.toObject();
 
-  // 如果需要处理敏感数据可以在这里处理
+  // 检查图片是否存在
+  if (tweetObject.image) {
+    tweetObject.image = true;  // 如果存在图片,将image属性设置为true
+  }
 
   return tweetObject;
 };
+
+
 
 const Tweet = mongoose.model("Tweet", tweetSchema);
 

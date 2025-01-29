@@ -142,7 +142,7 @@ router.get("/users/:id/avatar", async (req, res) => {
 });
 
 // 关注用户路由
-router.patch("/users/:id/follow", auth, async (req, res) => {
+router.put("/users/:id/follow", auth, async (req, res) => {
   // 1. 检查是否试图关注自己
   if (req.user.id === req.params.id) {
     return res.status(403).json({ message: "你不能关注自己" });
@@ -180,7 +180,7 @@ router.patch("/users/:id/follow", auth, async (req, res) => {
 });
 
 // 取消关注用户路由
-router.patch("/users/:id/unfollow", auth, async (req, res) => {
+router.put("/users/:id/unfollow", auth, async (req, res) => {
   // 1. 检查是否试图取消关注自己
   if (req.user.id === req.params.id) {
     return res.status(403).json({ message: "你不能取消关注自己" });
