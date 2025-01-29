@@ -2,7 +2,7 @@ const express = require("express");
 const User = require("../models/user");
 const multer = require("multer");
 const sharp = require("sharp");
-const auth = require("../middleware/auth"); 
+const auth = require("../middleware/auth");
 const router = express.Router();
 
 // 配置multer
@@ -88,45 +88,57 @@ router.post(
   auth,
   upload.single("avatar"),
   async (req, res) => {
-  
+    try {
       // 使用sharp处理图片
       const buffer = await sharp(req.file.buffer)
         .resize(250, 250)
         .png()
         .toBuffer();
 
-      // 测试阶段直接返回处理后的buffer
-      res.send(buffer);
+      // 清除旧头像
+      if (req.user.avatarExists) {
+        req.user.avatar = null;
+      }
 
-    
-    // 清除旧头像
-    if (req.user.avatarExists) {
-      req.user.avatar = null;
+      // 保存新头像
+      req.user.avatar = buffer;
+      req.user.avatarExists = true;
+      await req.user.save();
+
+      res.send({ message: "Profile image uploaded successfully" });
+    } catch (error) {
+      res.status(400).send({ error: error.message });
     }
-    
-    // 保存新头像
-    req.user.avatar = buffer;
-    req.user.avatarExists = true;
-    await req.user.save();
-  
-    res.send({ message: 'Profile image uploaded successfully' });
-  },
-  (error, req, res, next) => {
-    res.status(400).send({ error: error.message });
   }
 );
 
-
 // 添加登出路由
-router.post('/users/logout', auth, async (req, res) => {
+router.post("/users/logout", auth, async (req, res) => {
   try {
     req.user.tokens = req.user.tokens.filter((token) => {
       return token.token !== req.token;
     });
     await req.user.save();
-    res.send({ message: 'Logged out successfully' });
+    res.send({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).send();
+  }
+});
+
+
+// 获取用户头像路由
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatarExists) {
+      throw new Error("User or avatar not found");
+    }
+
+    res.set("Content-Type", "image/jpeg");
+    res.send(user.avatar);
+  } catch (error) {
+    res.status(404).send({ error: error.message });
   }
 });
 
