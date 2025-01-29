@@ -1,7 +1,16 @@
 const express = require("express");
 const User = require("../models/user");
-
+const multer = require("multer");
+const sharp = require("sharp");
+const auth = require("../middleware/auth"); 
 const router = express.Router();
+
+// 配置multer
+const upload = multer({
+  limits: {
+    fileSize: 1000000, // 限制文件大小为1MB
+  },
+});
 
 router.post("/users", async (req, res) => {
   try {
@@ -43,7 +52,6 @@ router.post("/users/login", async (req, res) => {
   }
 });
 
-
 // 删除用户路由
 router.delete("/users/:id", async (req, res) => {
   try {
@@ -59,7 +67,6 @@ router.delete("/users/:id", async (req, res) => {
   }
 });
 
-
 // 获取特定用户路由
 router.get("/users/:id", async (req, res) => {
   try {
@@ -72,6 +79,54 @@ router.get("/users/:id", async (req, res) => {
     res.send(user);
   } catch (error) {
     res.status(500).send(error);
+  }
+});
+
+// 添加头像上传路由
+router.post(
+  "/users/me/avatar",
+  auth,
+  upload.single("avatar"),
+  async (req, res) => {
+  
+      // 使用sharp处理图片
+      const buffer = await sharp(req.file.buffer)
+        .resize(250, 250)
+        .png()
+        .toBuffer();
+
+      // 测试阶段直接返回处理后的buffer
+      res.send(buffer);
+
+    
+    // 清除旧头像
+    if (req.user.avatarExists) {
+      req.user.avatar = null;
+    }
+    
+    // 保存新头像
+    req.user.avatar = buffer;
+    req.user.avatarExists = true;
+    await req.user.save();
+  
+    res.send({ message: 'Profile image uploaded successfully' });
+  },
+  (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+  }
+);
+
+
+// 添加登出路由
+router.post('/users/logout', auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter((token) => {
+      return token.token !== req.token;
+    });
+    await req.user.save();
+    res.send({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).send();
   }
 });
 
