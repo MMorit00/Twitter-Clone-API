@@ -84,67 +84,53 @@ router.get("/tweets/:id/image", async (req, res) => {
   }
 });
 
-// 点赞推文路由
 router.put("/tweets/:id/like", auth, async (req, res) => {
   try {
-    // 1. 查找推文
+    // 先查找推文，确保存在
     const tweet = await Tweet.findById(req.params.id);
-
     if (!tweet) {
       return res.status(404).send({ error: "Tweet not found" });
     }
 
-    // 2. 检查是否已经点赞
+    // 检查是否已经点赞
     if (!tweet.likes.includes(req.user._id)) {
-      // 3. 添加点赞
-      await Tweet.updateOne(
-        { _id: req.params.id },
-        {
-          $push: { likes: req.user._id },
-        }
-      );
-      res.status(200).send({ message: "Tweet has been liked" });
+      // 使用 findByIdAndUpdate 返回更新后的 tweet 对象，并填充用户信息
+      const updatedTweet = await Tweet.findByIdAndUpdate(
+        req.params.id,
+        { $push: { likes: req.user._id } },
+        { new: true }
+      ).populate("userId", "name username");
+      return res.status(200).send(updatedTweet);
     } else {
-      // 4. 已点赞则返回错误
-      res.status(403).send({ error: "You have already liked this tweet" });
+      return res.status(403).send({ error: "You have already liked this tweet" });
     }
   } catch (error) {
     res.status(500).send(error);
   }
 });
-
 // ... existing code ...
 
-// 取消点赞推文路由
 router.put("/tweets/:id/unlike", auth, async (req, res) => {
   try {
-    // 1. 查找推文
     const tweet = await Tweet.findById(req.params.id);
-
     if (!tweet) {
       return res.status(404).send({ error: "Tweet not found" });
     }
-
-    // 2. 检查是否已经点赞
     if (tweet.likes.includes(req.user._id)) {
-      // 3. 移除点赞
-      await Tweet.updateOne(
-        { _id: req.params.id },
-        {
-          $pull: { likes: req.user._id },
-        }
-      );
-      res.status(200).send({ message: "Tweet has been unliked" });
+      // 使用 findByIdAndUpdate 返回更新后的 tweet 对象
+      const updatedTweet = await Tweet.findByIdAndUpdate(
+        req.params.id,
+        { $pull: { likes: req.user._id } },
+        { new: true }
+      ).populate("userId", "name username");
+      return res.status(200).send(updatedTweet);
     } else {
-      // 4. 未点赞则返回错误
-      res.status(403).send({ error: "You have already unliked this tweet" });
+      return res.status(403).send({ error: "You have already unliked this tweet" });
     }
   } catch (error) {
     res.status(500).send(error);
   }
 });
-
-
 // 获取特定用户的推文
 router.get("/tweets/user/:id", async (req, res) => {
   try {

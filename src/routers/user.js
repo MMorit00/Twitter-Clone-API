@@ -67,6 +67,11 @@ router.delete("/users/:id", async (req, res) => {
   }
 });
 
+router.get('/users/me', auth, async (req, res) => {
+  res.send(req.user);
+});
+
+
 // 获取特定用户路由
 router.get("/users/:id", async (req, res) => {
   try {
@@ -81,6 +86,8 @@ router.get("/users/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+
 
 // 添加头像上传路由
 router.post(
